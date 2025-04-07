@@ -1,33 +1,76 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import { Niivue } from '@niivue/niivue'
+import { Checkbox, FormControlLabel, FormGroup } from '@mui/material'
 
-function App() {
-  const [count, setCount] = useState(0)
+const App = () => {
+  const glref = useRef<HTMLCanvasElement>(null)
+  const [theNiivue, setTheNiivue] = useState<Niivue | null>(null)
+  const [isWholeImg, setIsWholeImg] = useState(true)
+  const [isPartialImg, setIsPartialImg] = useState(true)
+
+  useEffect(() => {
+    if (!glref) {
+      return
+    }
+    if (!glref.current) {
+      return
+    }
+
+    const opts = {
+      show3Dcrosshair: true,
+    }
+    const nv = new Niivue(opts)
+
+    nv.attachToCanvas(glref.current)
+
+    setTheNiivue(nv)
+  }, [glref])
+
+  useEffect(() => {
+    if (!theNiivue) {
+      return
+    }
+
+    const volumeList = [{ url: './chris_t1.nii.gz' }, { url: './chris_t1-2.nii.gz' }]
+    theNiivue.loadVolumes(volumeList)
+  }, [theNiivue])
+
+  const onClickWholeImg = () => {
+    if (!theNiivue?.back) {
+      return
+    }
+
+    theNiivue.back.opacity = 1 - theNiivue.back.opacity
+    theNiivue.drawScene()
+
+    setIsWholeImg(!isWholeImg)
+  }
+
+  const onClickPartialImg = () => {
+    if (!theNiivue?.overlays?.length) {
+      return
+    }
+
+    theNiivue.overlays[0].opacity = 1 - theNiivue.overlays[0].opacity
+    theNiivue.drawScene()
+
+    setIsPartialImg(!isPartialImg)
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <FormGroup>
+        <FormControlLabel
+          control={<Checkbox defaultChecked onClick={onClickWholeImg} />}
+          label='whole'
+        />
+        <FormControlLabel
+          control={<Checkbox defaultChecked onClick={onClickPartialImg} />}
+          label='partial'
+        />
+      </FormGroup>
+      <canvas ref={glref} />
     </>
   )
 }

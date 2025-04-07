@@ -1,54 +1,29 @@
-# React + TypeScript + Vite
+# niivue-layer-alignment
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the demo to show layer alignment.
 
-Currently, two official plugins are available:
+`chris_t1.nii.gz` is from [niivue-demo-images](https://github.com/niivue/niivue-demo-images/blob/main/chris_t1.nii.gz).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The partial image is constructed using the following code snippet:
 
-## Expanding the ESLint configuration
+```python
+import SimpleSTK as sitk
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+filename = 'chris_t1.nii.gz'
+img_sitk = sitk.ReadImage(filename)
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+img_npy = sitk.GetArrayFromImage(img_sitk)
+img_npy_crop_offset = [slice(20, 130), slice(43, 173), slice(14, 134)]
+img_sitk2 = sitk.GetImageFromArray(img_npy_crop)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+spacing = img_sitk.GetSpacing()
+origin2 = (origin[0] - 14 * spacing[0], origin[1] - 43 * spacing[1], origin[2] + 20 * spacing[2])
+img_sitk2.SetOrigin(origin2)
+img_sitk2.SetDirection(img_sitk.GetDirection())
+img_sitk2.SetSpacing(img_sitk.GetSpacing())
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+filename2 = 'chris_t1-2.nii.gz'
+writer = sitk.ImageFileWriter()
+writer.SetFileName(filename2)
+writer.Execute(img_sitk2)
 ```
